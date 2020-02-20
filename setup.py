@@ -7,7 +7,7 @@ setup(
     version="0.1",
     author = "Kiyoon Kim",
     author_email='kiyoon.kim@ed.ac.uk',
-    description = "",
+    description = "A python 3 module to construct deep learning experiments (dirs, files, stats, plots, etc.)",
     url = "https://github.com/kiyoon/experiment_utils",
     packages=['experiment_utils'],
     #package_dir={'experiment_utils': 'src'},
