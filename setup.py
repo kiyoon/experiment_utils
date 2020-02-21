@@ -12,5 +12,8 @@ setup(
     packages=['experiment_utils'],
     #package_dir={'experiment_utils': 'src'},
     python_requires='>=3.6',
-    install_requires=['numpy>=1.16.0'],
+    #setup_requires=['numpy'],
+    install_requires=[
+        'numpy>=1.16.0',
+        'matplotlib>=3.0.0'],
 )

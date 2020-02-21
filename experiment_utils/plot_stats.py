@@ -3,10 +3,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
-import warnings
 
 
-warnings.filterwarnings('error')
+# !! This makes a huge numpy and pandas compatibility issues. 
+#import warnings
+#warnings.filterwarnings('error')
+
 plt.rcParams.update({'font.size': 16})
 
 
