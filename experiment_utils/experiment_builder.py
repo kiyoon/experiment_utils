@@ -68,6 +68,19 @@ class ExperimentBuilder():
         return os.path.join(self.weights_dir, checkpoints_format.format(epoch))
 
 
+    def get_epoch_stat(self, epoch):
+        epoch_indices = [i for i, e in enumerate(self.summary['epoch']) if e == epoch]
+        if len(epoch_indices) != 1:
+            raise ValueError("Too many or no epoch found in the summary. Found %d epoch stats." % len(epoch_indices))
+        
+        epoch_idx = epoch_indices[0]
+
+        stat = {}
+        for fieldname in self.summary_fieldnames:
+            stat[fieldname] = self.summary[fieldname][epoch_idx]
+
+        return stat
+
     def get_best_model_stat(self, field = 'val_vid_acc_top1'):
         array_to_argmax = np.array(self.summary[field])
         best_idx = array_to_argmax.argmax()

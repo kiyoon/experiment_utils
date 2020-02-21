@@ -13,8 +13,8 @@ ${experiment_root}
         ├── logs
         │   └── summary.csv
         ├── plots
-        │   ├── clip_accuracy.pdf
-        │   ├── clip_loss.pdf
+        │   ├── accuracy.pdf
+        │   ├── loss.pdf
         │   ├── video_accuracy_top1.pdf
         │   └── video_accuracy_top5.pdf
         ├── (predictions)
