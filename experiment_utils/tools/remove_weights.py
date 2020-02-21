@@ -22,29 +22,44 @@ if __name__ == '__main__':
     best_epoch = exp.get_best_model_stat()['epoch']
     last_epoch = max(exp.summary['epoch'])
     remove_list = []
+    nonexist_list = []
     keep_list = []
 
-    print("These files will be removed:")
-    #best_stat['epoch'], exp.summary['epoch'][-1]
+    # Search
     for epoch in exp.summary['epoch']:
         checkpoint_path = exp.get_checkpoint_path(epoch)
         if epoch not in [best_epoch, last_epoch]:
-            remove_list.append(checkpoint_path)
-            print(checkpoint_path)
+            if os.path.isfile(checkpoint_path):
+                remove_list.append(checkpoint_path)
+            else:
+                nonexist_list.append(checkpoint_path)
         else:
             keep_list.append((checkpoint_path, exp.get_epoch_stat(epoch)))
 
+    if len(nonexist_list) > 0:
+        print("* We can't find these files:")
+        for checkpoint_path in nonexist_list:
+            print(checkpoint_path)
+        print()
+
+    print("* These files will be removed:")
+    for checkpoint_path in remove_list:
+        print(checkpoint_path)
+
     print()
-    print("These files will be kept:")
+    print("* These files will be kept:")
     for checkpoint_path, stat in keep_list:
         print(checkpoint_path, stat)
+    print()
+    print()
 
-    proceed = input("Proceed? (y/n) ")
-    if proceed.lower() == 'y':
-        print("Removing..")
-        for remove_path in remove_list:
-            os.remove(remove_path)
+    if len(remove_list) > 0:
+        proceed = input("Proceed? (y/n) ")
+        if proceed.lower() == 'y':
+            for remove_path in remove_list:
+                os.remove(remove_path)
 
-
-    print("Successfully removed.")
+        print("Successfully removed.")
+    else:
+        print("Nothing to remove. Terminating..")
     
