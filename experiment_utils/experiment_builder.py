@@ -49,12 +49,12 @@ class ExperimentBuilder():
         if summary_fieldnames:
             self.summary_fieldnames = summary_fieldnames
         else:
-            self.summary_fieldnames = ['epoch', 'runtime_sec', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 'val_vid_acc_top1', 'val_vid_acc_top5']
+            self.summary_fieldnames = ['epoch', 'train_runtime_sec', 'val_runtime_sec', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 'val_vid_acc_top1', 'val_vid_acc_top5']
 
         if summary_fieldtypes:
             self.summary_fieldtypes = summary_fieldtypes
         else:
-            self.summary_fieldtypes = {'epoch': int, 'runtime_sec': float, 'train_loss': float, 'train_acc': float, 'val_loss': float, 'val_acc': float, 'val_vid_acc_top1': float, 'val_vid_acc_top5': float}
+            self.summary_fieldtypes = {'epoch': int, 'train_runtime_sec': float, 'val_runtime_sec': float, 'train_loss': float, 'train_acc': float, 'val_loss': float, 'val_acc': float, 'val_vid_acc_top1': float, 'val_vid_acc_top5': float}
 
 
     def make_dirs_for_training(self):
