@@ -49,12 +49,12 @@ class ExperimentBuilder():
         if summary_fieldnames:
             self.summary_fieldnames = summary_fieldnames
         else:
-            self.summary_fieldnames = ['epoch', 'train_runtime_sec', 'val_runtime_sec', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 'val_vid_acc_top1', 'val_vid_acc_top5']
+            self.summary_fieldnames = ['epoch', 'train_runtime_sec', 'train_loss', 'train_acc', 'val_runtime_sec', 'val_loss', 'val_acc', 'multi_crop_val_runtime_sec', 'multi_crop_val_loss', 'multi_crop_val_acc', 'multi_crop_val_vid_acc_top1', 'multi_crop_val_vid_acc_top5']
 
         if summary_fieldtypes:
             self.summary_fieldtypes = summary_fieldtypes
         else:
-            self.summary_fieldtypes = {'epoch': int, 'train_runtime_sec': float, 'val_runtime_sec': float, 'train_loss': float, 'train_acc': float, 'val_loss': float, 'val_acc': float, 'val_vid_acc_top1': float, 'val_vid_acc_top5': float}
+            self.summary_fieldtypes = {'epoch': int, 'train_runtime_sec': float, 'train_loss': float, 'train_acc': float, 'val_runtime_sec': float, 'val_loss': float, 'val_acc': float, 'multi_crop_val_runtime_sec': float, 'multi_crop_val_loss': float, 'multi_crop_val_acc': float, 'multi_crop_val_vid_acc_top1': float, 'multi_crop_val_vid_acc_top5': float}
 
 
     def make_dirs_for_training(self):
@@ -81,7 +81,7 @@ class ExperimentBuilder():
 
         return stat
 
-    def get_best_model_stat(self, field = 'val_vid_acc_top1'):
+    def get_best_model_stat(self, field = 'val_acc'):
         array_to_argmax = np.array(self.summary[field])
         best_idx = array_to_argmax.argmax()
 
@@ -128,7 +128,10 @@ class ExperimentBuilder():
         """
 
         for fieldname in self.summary_fieldnames:
-            self.summary[fieldname].append(curr_stat[fieldname])
+            if fieldname in curr_stat.keys():
+                self.summary[fieldname].append(curr_stat[fieldname])
+            else:
+                self.summary[fieldname].append(None)
 
         with open(self.summary_file, 'a', newline='') as csv_file:
             csv_writer = csv.DictWriter(csv_file, fieldnames=self.summary_fieldnames)
