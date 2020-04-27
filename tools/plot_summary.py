@@ -5,7 +5,7 @@ import numpy as np
 import sys, os
 import warnings
 
-from .. import ExperimentBuilder
+from experiment_utils import ExperimentBuilder
 
 
 warnings.filterwarnings('error')

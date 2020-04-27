@@ -1,7 +1,7 @@
 import os
 
-from .. import ExperimentBuilder
-from ..argparse_utils import add_exp_arguments
+from experiment_utils import ExperimentBuilder
+from experiment_utils.argparse_utils import add_exp_arguments
 
 import argparse
 def get_parser():

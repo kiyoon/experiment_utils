@@ -17,8 +17,8 @@ def plot_stats(stats, output_fig_dir):
 
     #print(stats['train_loss'])
 
-    fig_1 = plt.figure(figsize=(8, 4))
-    ax_1 = fig_1.add_subplot(111)
+    loss_fig = plt.figure(figsize=(8, 4))
+    ax_1 = loss_fig.add_subplot(111)
 #    ax_1.set_xlim([0,100])
 #    ax_1.set_ylim([0,1])
     ax_1.set_xlim(auto=True)
@@ -29,23 +29,18 @@ def plot_stats(stats, output_fig_dir):
     ax_1.legend(loc=0)
     ax_1.set_xlabel('Epoch number')
 
-    fig_1.tight_layout()
-    fig_1.savefig(os.path.join(output_fig_dir, 'loss.pdf'))
-    plt.close(fig_1)
+    loss_fig.tight_layout()
+    loss_fig.savefig(os.path.join(output_fig_dir, 'loss.pdf'))
 
-    fig_1 = plt.figure(figsize=(8, 4))
-    ax_1 = fig_1.add_subplot(111)
+
+
+    acc_fig = plt.figure(figsize=(8, 4))
+    ax_1 = acc_fig.add_subplot(111)
     ax_1.set_xlim(auto=True)
     ax_1.set_ylim(auto=True)
     for k in ['train_acc', 'val_acc']:
         ax_1.plot(stats['epoch'],
                 stats[k], label=label[k])
-    ax_1.legend(loc=0)
-    ax_1.set_xlabel('Epoch number')
-
-    fig_1.tight_layout()
-    fig_1.savefig(os.path.join(output_fig_dir, 'accuracy.pdf'))
-    plt.close(fig_1)
 
     key = 'multi_crop_val_vid_acc_top1'
     if key in stats.keys():
@@ -53,30 +48,28 @@ def plot_stats(stats, output_fig_dir):
         if len(valid_indices) > 0:
             valid_epoch = [stats['epoch'][v] for i,v in enumerate(valid_indices)]
             valid_acc_values = [stats[key][v] for i,v in enumerate(valid_indices)]
-            fig_1 = plt.figure(figsize=(8, 4))
-            ax_1 = fig_1.add_subplot(111)
-        #    ax_1.set_xlim([0,100])
-        #    ax_1.set_ylim([0,1])
-            ax_1.set_xlim(auto=True)
-            ax_1.set_ylim(auto=True)
             for k in [key]:
                 ax_1.plot(valid_epoch,
                         valid_acc_values, label=label[k])
-            ax_1.legend(loc=0)
-            ax_1.set_xlabel('Epoch number')
 
-            fig_1.tight_layout()
-            fig_1.savefig(os.path.join(output_fig_dir, 'video_accuracy_top1.pdf'))
-            plt.close(fig_1)
+    ax_1.legend(loc=0)
+    ax_1.set_xlabel('Epoch number')
+
+    acc_fig.tight_layout()
+    acc_fig.savefig(os.path.join(output_fig_dir, 'accuracy.pdf'))
+
+
+
 
     key = 'multi_crop_val_vid_acc_top5'
+    acc5_fig = None
     if key in stats.keys():
         valid_indices = [i for i,v in enumerate(stats[key]) if v != None]
         if len(valid_indices) > 0:
             valid_epoch = [stats['epoch'][v] for i,v in enumerate(valid_indices)]
             valid_acc_values = [stats[key][v] for i,v in enumerate(valid_indices)]
-            fig_1 = plt.figure(figsize=(8, 4))
-            ax_1 = fig_1.add_subplot(111)
+            acc5_fig = plt.figure(figsize=(8, 4))
+            ax_1 = acc5_fig.add_subplot(111)
         #    ax_1.set_xlim([0,100])
         #    ax_1.set_ylim([0,1])
             ax_1.set_xlim(auto=True)
@@ -87,6 +80,7 @@ def plot_stats(stats, output_fig_dir):
             ax_1.legend(loc=0)
             ax_1.set_xlabel('Epoch number')
 
-            fig_1.tight_layout()
-            fig_1.savefig(os.path.join(output_fig_dir, 'video_accuracy_top5.pdf'))
-            plt.close(fig_1)
+            acc5_fig.tight_layout()
+            acc5_fig.savefig(os.path.join(output_fig_dir, 'accuracy_top5.pdf'))
+    
+    return loss_fig, acc_fig, acc5_fig
