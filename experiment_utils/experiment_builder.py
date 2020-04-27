@@ -139,7 +139,7 @@ class ExperimentBuilder():
 
 
     def plot_summary(self):
-        plot_stats(self.summary, self.plots_dir)
+        return plot_stats(self.summary, self.plots_dir)
 
 
 
