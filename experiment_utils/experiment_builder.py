@@ -2,7 +2,9 @@ import os
 import csv, json
 from .csv_to_dict import csv_to_dict
 from .plot_stats import plot_stats
+import .telegram_post as tg
 import numpy as np
+import matplotlib.pyplot as plt
 
 checkpoints_format = "epoch_{:04d}.pth"
 
@@ -14,7 +16,7 @@ summaries = multiple experiments' summaries
 """
 
 class ExperimentBuilder():
-    def __init__(self, experiment_root, dataset, experiment_name, summary_fieldnames = None, summary_fieldtypes = None):
+    def __init__(self, experiment_root, dataset, experiment_name, summary_fieldnames = None, summary_fieldtypes = None, telegram_key_ini = None):
         """Initialise the experiment common paths.
 
         Params:
@@ -55,6 +57,16 @@ class ExperimentBuilder():
             self.summary_fieldtypes = summary_fieldtypes
         else:
             self.summary_fieldtypes = {'epoch': int, 'train_runtime_sec': float, 'train_loss': float, 'train_acc': float, 'val_runtime_sec': float, 'val_loss': float, 'val_acc': float, 'multi_crop_val_runtime_sec': float, 'multi_crop_val_loss': float, 'multi_crop_val_acc': float, 'multi_crop_val_vid_acc_top1': float, 'multi_crop_val_vid_acc_top5': float}
+
+
+        if telegram_key_ini:
+            key = configparser.ConfigParser()
+            key.read(telegram_key_ini)
+            self.tg_token = key['Telegram']['token']
+            self.tg_chat_id = key['Telegram']['chat_id']
+        else:
+            self.tg_token = None
+            self.tg_chat_id = None
 
 
     def make_dirs_for_training(self):
@@ -138,9 +150,45 @@ class ExperimentBuilder():
             csv_writer.writerow(curr_stat)
 
 
-    def plot_summary(self):
-        return plot_stats(self.summary, self.plots_dir)
+    def plot_summary(self, send_telegram = False):
+        """Save summary plots to the plot dir and also send to Telegram
+        """
+        loss_fig, acc_fig, acc5_fig = plot_stats(self.summary, self.plots_dir)
+
+        if send_telegram:
+            self.tg_send_matplotlib_fig(loss_fig)
+            self.tg_send_matplotlib_fig(acc_fig)
+            if acc5_fig:
+                self.tg_send_matplotlib_fig(acc5_fig)
+
+        plt.close(loss_fig)
+        plt.close(acc_fig)
+        if acc5_fig:
+            plt.close(acc5_fig)
 
 
+    # Send telegram messages when telegram key is initialised.
+    def tg_send_text(self, text, parse_mode = None):
+        if self.tg_token:
+            return tg.send_text(self.tg_token, self.tg_chat_id, text, parse_mode)
+        return None
 
+    def tg_send_text_with_title(self, title, body):
+        if self.tg_token:
+            return tg.send_text_with_title(self.tg_token, self.tg_chat_id, title, body)
+        return None
 
+    def tg_send_photo(self, img_path):
+        if self.tg_token:
+            return tg.send_photo(self.tg_token, self.tg_chat_id, img_path)
+        return None
+
+    def tg_send_remote_photo(self, img_url):
+        if self.tg_token:
+            return tg.send_remote_photo(self.tg_token, self.tg_chat_id, img_url)
+        return None
+
+    def tg_send_matplotlib_fig(self, fig):
+        if self.tg_token:
+            return tg.send_matplotlib_fig(self.tg_token, self.tg_chat_id, fig)
+        return None
