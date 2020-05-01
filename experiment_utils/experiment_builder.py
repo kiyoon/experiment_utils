@@ -2,9 +2,10 @@ import os
 import csv, json
 from .csv_to_dict import csv_to_dict
 from .plot_stats import plot_stats
-import .telegram_post as tg
+from .  import telegram_post as tg
 import numpy as np
 import matplotlib.pyplot as plt
+import configparser
 
 checkpoints_format = "epoch_{:04d}.pth"
 
@@ -16,20 +17,22 @@ summaries = multiple experiments' summaries
 """
 
 class ExperimentBuilder():
-    def __init__(self, experiment_root, dataset, experiment_name, summary_fieldnames = None, summary_fieldtypes = None, telegram_key_ini = None):
+    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames = None, summary_fieldtypes = None, telegram_key_ini = None):
         """Initialise the experiment common paths.
 
         Params:
             experiment_root (str): Root directory
             dataset (str): Name of the dataset
+            model_name (str): Name of the model 
             experiment_name (str): Name of the experiment
         """
         self.experiment_root = experiment_root
         self.dataset = dataset
+        self.model_name = model_name
         self.experiment_name = experiment_name
 
         # dirs
-        self.experiment_dir = os.path.join(experiment_root, dataset, experiment_name)
+        self.experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name)
 
         self.configs_dir = os.path.join(self.experiment_dir, 'configs')
         self.logs_dir = os.path.join(self.experiment_dir, 'logs')

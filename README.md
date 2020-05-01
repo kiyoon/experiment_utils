@@ -7,20 +7,21 @@ The experiment directory will look something like this:
 ```bash
 ${experiment_root}
 └── ${dataset}
-    └── ${experiment_name}
-        ├── configs
-        │   └── args.json
-        ├── logs
-        │   └── summary.csv
-        ├── plots
-        │   ├── accuracy.pdf
-        │   ├── loss.pdf
-        │   ├── video_accuracy_top1.pdf
-        │   └── video_accuracy_top5.pdf
-        ├── (predictions)
-        ├── tensorboard_runs
-        └── weights
-            ├── epoch_0000.pth
-            └── epoch_0001.pth
+    └── ${model_name}
+		└── ${experiment_name}
+			├── configs
+			│   └── args.json
+			├── logs
+			│   └── summary.csv
+			├── plots
+			│   ├── accuracy.pdf
+			│   ├── loss.pdf
+			│   ├── video_accuracy_top1.pdf
+			│   └── video_accuracy_top5.pdf
+			├── (predictions)
+			├── tensorboard_runs
+			└── weights
+				├── epoch_0000.pth
+				└── epoch_0001.pth
 ```
 
