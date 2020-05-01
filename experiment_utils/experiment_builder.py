@@ -181,6 +181,9 @@ class ExperimentBuilder():
             return tg.send_text_with_title(self.tg_token, self.tg_chat_id, title, body)
         return None
 
+    def tg_send_text_with_expname(self, body):
+        return self.tg_send_text_with_title('{} {} {}'.format(self.dataset, self.model_name, self.experiment_name), body)
+
     def tg_send_photo(self, img_path):
         if self.tg_token:
             return tg.send_photo(self.tg_token, self.tg_chat_id, img_path)
