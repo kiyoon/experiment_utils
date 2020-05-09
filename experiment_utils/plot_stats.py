@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')       # Default TKinter backend instantiates windows even when saving the plot to files, causing problems.
 import numpy as np
 import sys, os
 
