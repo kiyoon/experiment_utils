@@ -97,7 +97,7 @@ class ExperimentBuilder():
         return stat
 
     def get_best_model_stat(self, field = 'val_acc'):
-        array_to_argmax = np.array(self.summary[field])
+        array_to_argmax = np.array([v if v != None else -100 for v in self.summary[field] ])
         best_idx = array_to_argmax.argmax()
 
         best_stat = {}
@@ -159,6 +159,7 @@ class ExperimentBuilder():
         loss_fig, acc_fig, acc5_fig = plot_stats(self.summary, self.plots_dir)
 
         if send_telegram:
+            self.tg_send_text_with_expname("Plots at epoch {:d}".format(self.summary['epoch'][-1]))
             self.tg_send_matplotlib_fig(loss_fig)
             self.tg_send_matplotlib_fig(acc_fig)
             if acc5_fig:
