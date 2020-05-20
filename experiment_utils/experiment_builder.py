@@ -159,7 +159,11 @@ class ExperimentBuilder():
         loss_fig, acc_fig, acc5_fig = plot_stats(self.summary, self.plots_dir)
 
         if send_telegram:
-            self.tg_send_text_with_expname("Plots at epoch {:d}".format(self.summary['epoch'][-1]))
+            best_clip_val_acc = self.get_best_model_stat('val_acc')
+            best_video_val_acc = self.get_best_model_stat('multi_crop_val_vid_acc_top1')
+            self.tg_send_text_with_expname("Plots at epoch {:d}\nHighest clip val acc {:.4f} at epoch {:d}\nHighest video val acc {:.4f} at epoch {:d}".format(self.summary['epoch'][-1],
+                best_clip_val_acc['val_acc'], best_clip_val_acc['epoch'],
+                best_video_val_acc['multi_crop_val_vid_acc_top1'], best_video_val_acc['epoch']))
             self.tg_send_matplotlib_fig(loss_fig)
             self.tg_send_matplotlib_fig(acc_fig)
             if acc5_fig:
