@@ -17,6 +17,19 @@ summaries = multiple experiments' summaries
 """
 
 class ExperimentBuilder():
+    @staticmethod
+    def return_fields(multicropval = True):
+        summary_fieldnames = ['epoch', 'train_runtime_sec', 'train_loss', 'train_acc', 'val_runtime_sec', 'val_loss', 'val_acc']
+
+        summary_fieldtypes = {'epoch': int, 'train_runtime_sec': float, 'train_loss': float, 'train_acc': float, 'val_runtime_sec': float, 'val_loss': float, 'val_acc': float}
+
+        if multicropval:
+            summary_fieldnames.extend(['multi_crop_val_runtime_sec', 'multi_crop_val_loss', 'multi_crop_val_acc', 'multi_crop_val_vid_acc_top1', 'multi_crop_val_vid_acc_top5'])
+            summary_fieldtypes.update({'multi_crop_val_runtime_sec': float, 'multi_crop_val_loss': float, 'multi_crop_val_acc': float, 'multi_crop_val_vid_acc_top1': float, 'multi_crop_val_vid_acc_top5': float})
+
+        return summary_fieldnames, summary_fieldtypes
+
+
     def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames = None, summary_fieldtypes = None, telegram_key_ini = None):
         """Initialise the experiment common paths.
 
@@ -158,12 +171,19 @@ class ExperimentBuilder():
         """
         loss_fig, acc_fig, acc5_fig = plot_stats(self.summary, self.plots_dir)
 
+        perform_multicropval = 'multi_crop_val_vid_acc_top1' in self.summary_fieldnames
+
         if send_telegram:
             best_clip_val_acc = self.get_best_model_stat('val_acc')
-            best_video_val_acc = self.get_best_model_stat('multi_crop_val_vid_acc_top1')
-            self.tg_send_text_with_expname("Plots at epoch {:d}\nHighest clip val acc {:.4f} at epoch {:d}\nHighest video val acc {:.4f} at epoch {:d}".format(self.summary['epoch'][-1],
-                best_clip_val_acc['val_acc'], best_clip_val_acc['epoch'],
-                best_video_val_acc['multi_crop_val_vid_acc_top1'], best_video_val_acc['epoch']))
+            text = "Plots at epoch {:d}\nHighest clip val acc {:.4f} at epoch {:d}".format(self.summary['epoch'][-1],
+                best_clip_val_acc['val_acc'], best_clip_val_acc['epoch'])
+
+            if perform_multicropval:
+                best_video_val_acc = self.get_best_model_stat('multi_crop_val_vid_acc_top1')
+                text += "\nHighest video val acc {:.4f} at epoch {:d}".format(
+                        best_video_val_acc['multi_crop_val_vid_acc_top1'], best_video_val_acc['epoch'])
+
+            self.tg_send_text_with_expname(text)
             self.tg_send_matplotlib_fig(loss_fig)
             self.tg_send_matplotlib_fig(acc_fig)
             if acc5_fig:

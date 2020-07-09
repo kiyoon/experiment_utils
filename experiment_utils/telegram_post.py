@@ -72,6 +72,14 @@ def send_matplotlib_fig(telegram_token, chat_id, fig):
     return _send_photo_bytes(telegram_token, chat_id, photo)
 
 
+def send_document(telegram_token, chat_id, file_path):
+    file_to_send = open(file_path, 'rb')
+    url = "https://api.telegram.org/bot{}/sendDocument".format(telegram_token);
+    files = {'document': file_to_send}
+    data = {'chat_id': chat_id}
+    r= requests.post(url, files=files, data=data)
+    return r
+
 if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
