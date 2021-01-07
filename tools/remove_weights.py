@@ -16,7 +16,7 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
-    exp = ExperimentBuilder(args.experiment_root, args.dataset, args.experiment_name)
+    exp = ExperimentBuilder(args.experiment_root, args.dataset, args.model, args.experiment_name)
     exp.load_summary()
 
     best_epoch = exp.get_best_model_stat()['epoch']
