@@ -1,7 +1,7 @@
 import os
 import csv, json
 from .csv_to_dict import csv_to_dict
-from .plot_stats import plot_stats
+from .plot_stats import plot_stats_singlelabel, plot_stats_multilabel
 from .  import telegram_post as tg
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ summaries = multiple experiments' summaries
 
 class ExperimentBuilder():
     @staticmethod
-    def return_fields(multicropval = True):
+    def return_fields_singlelabel(multicropval = True):
         summary_fieldnames = ['epoch', 'train_runtime_sec', 'train_loss', 'train_acc', 'val_runtime_sec', 'val_loss', 'val_acc']
 
         summary_fieldtypes = {'epoch': int, 'train_runtime_sec': float, 'train_loss': float, 'train_acc': float, 'val_runtime_sec': float, 'val_loss': float, 'val_acc': float}
@@ -29,6 +29,18 @@ class ExperimentBuilder():
 
         return summary_fieldnames, summary_fieldtypes
 
+
+    @staticmethod
+    def return_fields_multilabel(multicropval = True):
+        summary_fieldnames = ['epoch', 'train_runtime_sec', 'train_loss', 'train_vid_mAP', 'val_runtime_sec', 'val_loss', 'val_vid_mAP']
+
+        summary_fieldtypes = {'epoch': int, 'train_runtime_sec': float, 'train_loss': float, 'train_vid_mAP': float, 'val_runtime_sec': float, 'val_loss': float, 'val_vid_mAP': float}
+
+        if multicropval:
+            summary_fieldnames.extend(['multi_crop_val_runtime_sec', 'multi_crop_val_loss', 'multi_crop_val_vid_mAP'])
+            summary_fieldtypes.update({'multi_crop_val_runtime_sec': float, 'multi_crop_val_loss': float, 'multi_crop_val_vid_mAP': float})
+
+        return summary_fieldnames, summary_fieldtypes
 
     def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames = None, summary_fieldtypes = None, telegram_key_ini = None):
         """Initialise the experiment common paths.
@@ -169,30 +181,59 @@ class ExperimentBuilder():
     def plot_summary(self, send_telegram = False):
         """Save summary plots to the plot dir and also send to Telegram
         """
-        loss_fig, acc_fig, acc5_fig = plot_stats(self.summary, self.plots_dir)
 
-        perform_multicropval = 'multi_crop_val_vid_acc_top1' in self.summary_fieldnames
+        if 'train_acc' in self.summary_fieldnames:
+            task = 'singlelabel_classification'
+        elif 'train_vid_mAP' in self.summary_fieldnames:
+            task = 'multilabel_classification'
+        else:
+            raise NotImplementedError("Unknown task, cannot plot stats")
 
-        if send_telegram:
-            best_clip_val_acc = self.get_best_model_stat('val_acc')
-            text = "Plots at epoch {:d}\nHighest clip val acc {:.4f} at epoch {:d}".format(self.summary['epoch'][-1],
-                best_clip_val_acc['val_acc'], best_clip_val_acc['epoch'])
+        perform_multicropval = 'multi_crop_val_runtime_sec' in self.summary_fieldnames
 
-            if perform_multicropval:
-                best_video_val_acc = self.get_best_model_stat('multi_crop_val_vid_acc_top1')
-                text += "\nHighest video val acc {:.4f} at epoch {:d}".format(
-                        best_video_val_acc['multi_crop_val_vid_acc_top1'], best_video_val_acc['epoch'])
 
-            self.tg_send_text_with_expname(text)
-            self.tg_send_matplotlib_fig(loss_fig)
-            self.tg_send_matplotlib_fig(acc_fig)
+        if task == 'singlelabel_classification':
+            loss_fig, acc_fig, acc5_fig = plot_stats_singlelabel(self.summary, self.plots_dir)
+
+            if send_telegram:
+                best_clip_val_acc = self.get_best_model_stat('val_acc')
+                text = "Plots at epoch {:d}\nHighest clip val acc {:.4f} at epoch {:d}".format(self.summary['epoch'][-1],
+                    best_clip_val_acc['val_acc'], best_clip_val_acc['epoch'])
+
+                if perform_multicropval:
+                    best_video_val_acc = self.get_best_model_stat('multi_crop_val_vid_acc_top1')
+                    text += "\nHighest video val acc {:.4f} at epoch {:d}".format(
+                            best_video_val_acc['multi_crop_val_vid_acc_top1'], best_video_val_acc['epoch'])
+
+                self.tg_send_text_with_expname(text)
+                self.tg_send_matplotlib_fig(loss_fig)
+                self.tg_send_matplotlib_fig(acc_fig)
+                if acc5_fig:
+                    self.tg_send_matplotlib_fig(acc5_fig)
+
+            plt.close(loss_fig)
+            plt.close(acc_fig)
             if acc5_fig:
-                self.tg_send_matplotlib_fig(acc5_fig)
+                plt.close(acc5_fig)
 
-        plt.close(loss_fig)
-        plt.close(acc_fig)
-        if acc5_fig:
-            plt.close(acc5_fig)
+        elif task == 'multilabel_classification':
+            loss_fig, mAP_fig = plot_stats_multilabel(self.summary, self.plots_dir)
+            if send_telegram:
+                best_stat = self.get_best_model_stat('val_vid_mAP')
+                text = "Plots at epoch {:d}\nHighest video val mAP {:.4f} at epoch {:d}".format(self.summary['epoch'][-1],
+                    best_stat['val_vid_mAP'], best_stat['epoch'])
+
+                if perform_multicropval:
+                    best_multicrop_stat = self.get_best_model_stat('multi_crop_val_vid_mAP')
+                    text += "\nHighest multicrop video val mAP {:.4f} at epoch {:d}".format(
+                            best_multicrop_stat['multi_crop_val_vid_mAP'], best_multicrop_stat['epoch'])
+
+                self.tg_send_text_with_expname(text)
+                self.tg_send_matplotlib_fig(loss_fig)
+                self.tg_send_matplotlib_fig(mAP_fig)
+
+            plt.close(loss_fig)
+            plt.close(mAP_fig)
 
 
     # Send telegram messages when telegram key is initialised.
