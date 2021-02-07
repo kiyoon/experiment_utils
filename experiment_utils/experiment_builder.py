@@ -6,6 +6,7 @@ from .  import telegram_post as tg
 import numpy as np
 import matplotlib.pyplot as plt
 import configparser
+from .human_time_duration import human_time_duration
 
 checkpoints_format = "epoch_{:04d}.pth"
 
@@ -132,6 +133,24 @@ class ExperimentBuilder():
         return best_stat
 
 
+    def get_avg_value(self, field = 'train_runtime_sec'):
+        values = np.array([v for v in self.summary[field] if v is not None])
+        if values.size == 0:
+            return 0
+
+        average_value = values.mean()
+        return average_value
+
+    def get_sum_value(self, field = 'train_runtime_sec'):
+        values = np.array([v for v in self.summary[field] if v is not None])
+        if values.size == 0:
+            return 0
+
+        sum_value = values.sum()
+        return sum_value 
+
+
+
     def dump_args(self, args, open_mode = 'a'):
         """Save args as a json file to record the config of the experiment.
         """
@@ -178,6 +197,22 @@ class ExperimentBuilder():
             csv_writer.writerow(curr_stat)
 
 
+    def time_summary_to_text(self, perform_multicropval):
+        train_time_avg = human_time_duration(self.get_avg_value('train_runtime_sec'))
+        val_time_avg = human_time_duration(self.get_avg_value('val_runtime_sec'))
+        train_time_sum = human_time_duration(self.get_sum_value('train_runtime_sec'))
+        val_time_sum = human_time_duration(self.get_sum_value('val_runtime_sec'))
+        if not perform_multicropval:
+            text = f"Train/val time per epoch: {train_time_avg}, {val_time_avg}"
+            text += f"\nTotal time elapsed: {train_time_sum+val_time_sum}"
+        else:
+            multicropval_time_avg = human_time_duration(self.get_avg_value('multi_crop_val_runtime_sec'))
+            multicropval_time_sum = human_time_duration(self.get_sum_value('multi_crop_val_runtime_sec'))
+            text = f"Train/val/multicropval time per epoch: {train_time_avg}, {val_time_avg}, {multicropval_time_avg}"
+            text += f"\nTotal time elapsed: {train_time_sum+val_time_sum+multicropval_time_sum}"
+
+        return text 
+
     def plot_summary(self, send_telegram = False):
         """Save summary plots to the plot dir and also send to Telegram
         """
@@ -205,6 +240,9 @@ class ExperimentBuilder():
                     text += "\nHighest video val acc {:.4f} at epoch {:d}".format(
                             best_video_val_acc['multi_crop_val_vid_acc_top1'], best_video_val_acc['epoch'])
 
+                text += "\n" + self.time_summary_to_text(perform_multicropval)
+
+
                 self.tg_send_text_with_expname(text)
                 self.tg_send_matplotlib_fig(loss_fig)
                 self.tg_send_matplotlib_fig(acc_fig)
@@ -227,6 +265,8 @@ class ExperimentBuilder():
                     best_multicrop_stat = self.get_best_model_stat('multi_crop_val_vid_mAP')
                     text += "\nHighest multicrop video val mAP {:.4f} at epoch {:d}".format(
                             best_multicrop_stat['multi_crop_val_vid_mAP'], best_multicrop_stat['epoch'])
+
+                text += "\n" + self.time_summary_to_text(perform_multicropval)
 
                 self.tg_send_text_with_expname(text)
                 self.tg_send_matplotlib_fig(loss_fig)
