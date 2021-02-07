@@ -200,16 +200,16 @@ class ExperimentBuilder():
     def time_summary_to_text(self, perform_multicropval):
         train_time_avg = human_time_duration(self.get_avg_value('train_runtime_sec'))
         val_time_avg = human_time_duration(self.get_avg_value('val_runtime_sec'))
-        train_time_sum = human_time_duration(self.get_sum_value('train_runtime_sec'))
-        val_time_sum = human_time_duration(self.get_sum_value('val_runtime_sec'))
+        train_time_sum = self.get_sum_value('train_runtime_sec')
+        val_time_sum = self.get_sum_value('val_runtime_sec')
         if not perform_multicropval:
             text = f"Train/val time per epoch: {train_time_avg}, {val_time_avg}"
-            text += f"\nTotal time elapsed: {train_time_sum+val_time_sum}"
+            text += f"\nTotal time elapsed: {human_time_duration(train_time_sum+val_time_sum)}"
         else:
             multicropval_time_avg = human_time_duration(self.get_avg_value('multi_crop_val_runtime_sec'))
-            multicropval_time_sum = human_time_duration(self.get_sum_value('multi_crop_val_runtime_sec'))
+            multicropval_time_sum = self.get_sum_value('multi_crop_val_runtime_sec')
             text = f"Train/val/multicropval time per epoch: {train_time_avg}, {val_time_avg}, {multicropval_time_avg}"
-            text += f"\nTotal time elapsed: {train_time_sum+val_time_sum+multicropval_time_sum}"
+            text += f"\nTotal time elapsed: {human_time_duration(train_time_sum+val_time_sum+multicropval_time_sum)}"
 
         return text 
 
