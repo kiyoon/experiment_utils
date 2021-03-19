@@ -258,7 +258,7 @@ class ExperimentBuilder():
             loss_fig, mAP_fig = plot_stats_multilabel(self.summary, self.plots_dir)
             if send_telegram:
                 best_stat = self.get_best_model_stat('val_vid_mAP')
-                text = "Plots at epoch {:d}\nHighest (at epoch {:d}) / Last video val mAP {:.4f} / {:.4f}\n".format(self.summary['epoch'][-1],
+                text = "Plots at epoch {:d}\nHighest (at epoch {:d}) / Last video val mAP {:.4f} / {:.4f}".format(self.summary['epoch'][-1],
                     best_stat['epoch'], best_stat['val_vid_mAP'], self.summary['val_vid_mAP'][-1])
 
                 if perform_multicropval:
