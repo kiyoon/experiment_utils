@@ -232,13 +232,13 @@ class ExperimentBuilder():
 
             if send_telegram:
                 best_clip_val_acc = self.get_best_model_stat('val_acc')
-                text = "Plots at epoch {:d}\nHighest clip val acc {:.4f} at epoch {:d}".format(self.summary['epoch'][-1],
-                    best_clip_val_acc['val_acc'], best_clip_val_acc['epoch'])
+                text = "Plots at epoch {:d}\nHighest (at epoch {:d}) / Last clip val acc {:.4f} / {:.4f}".format(self.summary['epoch'][-1],
+                    best_clip_val_acc['epoch'], best_clip_val_acc['val_acc'], self.summary['val_acc'][-1])
 
                 if perform_multicropval:
                     best_video_val_acc = self.get_best_model_stat('multi_crop_val_vid_acc_top1')
-                    text += "\nHighest video val acc {:.4f} at epoch {:d}".format(
-                            best_video_val_acc['multi_crop_val_vid_acc_top1'], best_video_val_acc['epoch'])
+                    text += "\nHighest (at epoch {:d}) / Last video val acc {:.4f} / {:.4f}".format(
+                            best_video_val_acc['epoch'], best_video_val_acc['multi_crop_val_vid_acc_top1'], self.summary['multi_crop_val_vid_acc_top1'][-1])
 
                 text += "\n" + self.time_summary_to_text(perform_multicropval)
 
@@ -258,13 +258,13 @@ class ExperimentBuilder():
             loss_fig, mAP_fig = plot_stats_multilabel(self.summary, self.plots_dir)
             if send_telegram:
                 best_stat = self.get_best_model_stat('val_vid_mAP')
-                text = "Plots at epoch {:d}\nHighest video val mAP {:.4f} at epoch {:d}".format(self.summary['epoch'][-1],
-                    best_stat['val_vid_mAP'], best_stat['epoch'])
+                text = "Plots at epoch {:d}\nHighest (at epoch {:d}) / Last video val mAP {:.4f} / {:.4f}\n".format(self.summary['epoch'][-1],
+                    best_stat['epoch'], best_stat['val_vid_mAP'], self.summary['val_vid_mAP'][-1])
 
                 if perform_multicropval:
                     best_multicrop_stat = self.get_best_model_stat('multi_crop_val_vid_mAP')
-                    text += "\nHighest multicrop video val mAP {:.4f} at epoch {:d}".format(
-                            best_multicrop_stat['multi_crop_val_vid_mAP'], best_multicrop_stat['epoch'])
+                    text += "\nHighest (at epoch {:d}) / Last multicrop video val mAP {:.4f} / {:.4f}".format(
+                            best_multicrop_stat['epoch'], best_multicrop_stat['multi_crop_val_vid_mAP'], self.summary['multi_crop_val_vid_mAP'][-1])
 
                 text += "\n" + self.time_summary_to_text(perform_multicropval)
 
