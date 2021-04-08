@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import configparser
 from .human_time_duration import human_time_duration
 
+import logging
+logger = logging.getLogger(__name__)
+
 checkpoints_format = "epoch_{:04d}.pth"
 
 """Vocabularies I used
@@ -179,7 +182,10 @@ class ExperimentBuilder():
 
 
     def load_summary(self):
-        self.summary = csv_to_dict(self.summary_file, type_convert = self.summary_fieldtypes)
+        self.summary, fieldnames = csv_to_dict(self.summary_file, type_convert = self.summary_fieldtypes)
+        if fieldnames != self.summary_fieldnames:
+            logger.debug(f"self.summary_filednames does not match to that of summary.csv file. Updating to the CSV fields {fieldnames}.")
+            self.summary_fieldnames = fieldnames
 
 
     def add_summary_line(self, curr_stat):

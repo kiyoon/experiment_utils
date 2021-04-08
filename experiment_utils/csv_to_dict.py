@@ -2,10 +2,12 @@ import csv
 
 def csv_to_dict(csv_path, type_convert = None):
     csv_dict = {}
+    fieldnames = []
     with open(csv_path, 'r', newline='') as f:
         reader = csv.DictReader(f)
         for fieldname in reader.fieldnames:
             csv_dict[fieldname] = []
+            fieldnames.append(fieldname)
 
         for row in reader:
             for key in row.keys():
@@ -23,5 +25,5 @@ def csv_to_dict(csv_path, type_convert = None):
                     # if row[key] is empty
                     csv_dict[key].append(None)
 
-    return csv_dict
+    return csv_dict, fieldnames
 
