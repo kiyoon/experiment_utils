@@ -136,6 +136,19 @@ class ExperimentBuilder():
         return best_stat
 
 
+    def get_last_model_stat(self, field = 'val_acc'):
+        """Ignore None values and get the last stat
+        """
+        none_filtered = [i for i, v in enumerate(self.summary[field]) if v != None]
+        last_idx = none_filtered[-1]
+
+        last_stat = {}
+        for fieldname in self.summary_fieldnames:
+            last_stat[fieldname] = self.summary[fieldname][last_idx]
+
+        return last_stat
+
+
     def get_avg_value(self, field = 'train_runtime_sec'):
         values = np.array([v for v in self.summary[field] if v is not None])
         if values.size == 0:
@@ -243,8 +256,9 @@ class ExperimentBuilder():
 
                 if perform_multicropval:
                     best_video_val_acc = self.get_best_model_stat('multi_crop_val_vid_acc_top1')
-                    text += "\nHighest (at epoch {:d}) / Last video val acc {:.4f} / {:.4f}".format(
-                            best_video_val_acc['epoch'], best_video_val_acc['multi_crop_val_vid_acc_top1'], self.summary['multi_crop_val_vid_acc_top1'][-1])
+                    last_video_val_acc = self.get_last_model_stat('multi_crop_val_vid_acc_top1')
+                    text += "\nHighest (at epoch {:d}) / Last (at epoch {:d}) video val acc {:.4f} / {:.4f}".format(
+                            best_video_val_acc['epoch'], last_video_val_acc['epoch'], best_video_val_acc['multi_crop_val_vid_acc_top1'], last_video_val_acc['multi_crop_val_vid_acc_top1'])
 
                 text += "\n" + self.time_summary_to_text(perform_multicropval)
 
@@ -269,8 +283,9 @@ class ExperimentBuilder():
 
                 if perform_multicropval:
                     best_multicrop_stat = self.get_best_model_stat('multi_crop_val_vid_mAP')
-                    text += "\nHighest (at epoch {:d}) / Last multicrop video val mAP {:.4f} / {:.4f}".format(
-                            best_multicrop_stat['epoch'], best_multicrop_stat['multi_crop_val_vid_mAP'], self.summary['multi_crop_val_vid_mAP'][-1])
+                    last_multicrop_stat = self.get_last_model_stat('multi_crop_val_vid_mAP')
+                    text += "\nHighest (at epoch {:d}) / Last (at epoch {:d}) multicrop video val mAP {:.4f} / {:.4f}".format(
+                            best_multicrop_stat['epoch'], last_multicrop_stat['epoch'], best_multicrop_stat['multi_crop_val_vid_mAP'], last_multicrop_stat['multi_crop_val_vid_mAP'])
 
                 text += "\n" + self.time_summary_to_text(perform_multicropval)
 
