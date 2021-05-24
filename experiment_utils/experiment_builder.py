@@ -46,7 +46,7 @@ class ExperimentBuilder():
 
         return summary_fieldnames, summary_fieldtypes
 
-    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames = None, summary_fieldtypes = None, telegram_key_ini = None):
+    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames = None, summary_fieldtypes = None, telegram_key_ini = None, telegram_bot_idx = 0):
         """Initialise the experiment common paths.
 
         Params:
@@ -94,8 +94,13 @@ class ExperimentBuilder():
         if telegram_key_ini:
             key = configparser.ConfigParser()
             key.read(telegram_key_ini)
-            self.tg_token = key['Telegram']['token']
-            self.tg_chat_id = key['Telegram']['chat_id']
+            try:
+                self.tg_token = key[f'Telegram{telegram_bot_idx}']['token']
+                self.tg_chat_id = key[f'Telegram{telegram_bot_idx}']['chat_id']
+            except KeyError as e:
+                logger.warning(f'Telegram token and chat_id not found in {telegram_key_ini}. Suppressing all the Telegram outputs.')
+                self.tg_token = None
+                self.tg_chat_id = None
         else:
             self.tg_token = None
             self.tg_chat_id = None
