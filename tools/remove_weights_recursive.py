@@ -16,12 +16,16 @@ def get_parser():
 parser = get_parser()
 args = parser.parse_args()
     
+
+def list_only_dir(path):
+    return [ name for name in os.listdir(path) if os.path.isdir(os.path.join(path, name)) ]
+
 if __name__ == '__main__':
-    datasets = sorted(os.listdir(args.experiment_root))
+    datasets = sorted(list_only_dir(args.experiment_root))
     for dataset in datasets:
-        models = sorted(os.listdir(os.path.join(args.experiment_root, dataset)))
+        models = sorted(list_only_dir(os.path.join(args.experiment_root, dataset)))
         for model in models:
-            experiments = sorted(os.listdir(os.path.join(args.experiment_root, dataset, model)))
+            experiments = sorted(list_only_dir(os.path.join(args.experiment_root, dataset, model)))
             for experiment in experiments:
                 print(dataset, model, experiment)
                 remove_weights(args.experiment_root, dataset, model, experiment)
