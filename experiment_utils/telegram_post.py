@@ -65,7 +65,7 @@ def send_photo(telegram_token, chat_id, img_path, caption=None):
 def send_numpy_photo(telegram_token, chat_id, numpy_photo, caption=None):
     image = Image.fromarray(numpy_photo)
     photo = io.BytesIO()
-    image.save(photo, format='jpg')
+    image.save(photo, format='jpeg')
     photo.seek(0)       # to start reading from the beginning. (After writing, the cursor is at the end)
     photo.name = 'img.jpg'
     return _send_photo_bytes(telegram_token, chat_id, photo, caption)
