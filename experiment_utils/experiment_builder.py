@@ -97,11 +97,16 @@ class ExperimentBuilder():
             try:
                 self.tg_token = key[f'Telegram{telegram_bot_idx}']['token']
                 self.tg_chat_id = key[f'Telegram{telegram_bot_idx}']['chat_id']
+                if not self.tg_token or not self.tg_chat_id:
+                    raise KeyError('No telegram bot given')
+                else:
+                    logger.info(f'Telegram bot initialised with keys in {telegram_key_ini} and using the bot number {telegram_bot_idx}')
             except KeyError as e:
                 logger.warning(f'Telegram token and chat_id not found in {telegram_key_ini}. Suppressing all the Telegram outputs.')
                 self.tg_token = None
                 self.tg_chat_id = None
         else:
+            logger.info(f'Telegram bot not initialised.')
             self.tg_token = None
             self.tg_chat_id = None
 
