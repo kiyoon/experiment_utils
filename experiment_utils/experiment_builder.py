@@ -21,6 +21,33 @@ summaries = multiple experiments' summaries
 
 class ExperimentBuilder():
     @staticmethod
+    def return_fields_from_metrics(metrics):
+        summary_fieldnames = ['epoch']
+        summary_fieldtypes = {'epoch': int}
+
+        for split in ['train', 'val', 'multicropval']:
+            # Every split has runtime and loss metric by default.
+            summary_fieldnames.extend([f'{split}_runtime_sec', f'{split}_loss'])
+            summary_fieldtypes.update({f'{split}_runtime_sec': float, f'{split}_loss': float})
+
+            if split in metrics.keys() and metrics[split] is not None and len(metrics[split]) > 0:
+                for metric in metrics[split]:
+                    fieldtypes = metric.types_of_metrics()
+                    fieldnames = metric.get_csv_fieldnames(split)
+
+                    if isinstance(fieldnames, tuple) and isinstance(fieldtypes, tuple):
+                        for fieldname, fieldtype in zip(fieldnames, fieldtypes):
+                            summary_fieldnames.append(fieldname)
+                            summary_fieldtypes.update({fieldname: fieldtype})
+                    elif isinstance(fieldnames, str) and isinstance(fieldtypes, type):
+                        summary_fieldnames.append(fieldnames)
+                        summary_fieldtypes.update({fieldnames: fieldtypes})
+                    else:
+                        raise ValueError('Metric definition error: types_of_metrics() and get_csv_fieldnames() has to return both tuple, or type and str.')
+
+        return summary_fieldnames, summary_fieldtypes
+
+    @staticmethod
     def return_fields_singlelabel(multicropval = True):
         summary_fieldnames = ['epoch', 'train_runtime_sec', 'train_loss', 'train_acc', 'val_runtime_sec', 'val_loss', 'val_acc']
 
