@@ -1,6 +1,5 @@
 import os
 import csv, json
-from .csv_to_dict import csv_to_dict
 from .plot_stats import plot_stats_singlelabel, plot_stats_multilabel
 from .  import telegram_post as tg
 import numpy as np
@@ -11,7 +10,7 @@ from .human_time_duration import human_time_duration
 import logging
 logger = logging.getLogger(__name__)
 
-checkpoints_format = "epoch_{:04d}.pth"
+import pandas as pd
 
 """Vocabularies I used
 stat = 1 line of the summary
@@ -46,7 +45,7 @@ class ExperimentBuilder():
 
         return summary_fieldnames, summary_fieldtypes
 
-    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames = None, summary_fieldtypes = None, telegram_key_ini = None, telegram_bot_idx = 0):
+    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames = None, summary_fieldtypes = None, telegram_key_ini = None, telegram_bot_idx = 0, checkpoints_format = "epoch_{:04d}.pth"):
         """Initialise the experiment common paths.
 
         Params:
@@ -76,7 +75,7 @@ class ExperimentBuilder():
         self.args_file = os.path.join(self.configs_dir, 'args.json')
         self.summary_file = os.path.join(self.logs_dir, 'summary.csv')
 
-        # summary (dict) and summary.csv should always be synchronised.
+        # summary (pandas.DataFrame) and summary.csv should always be synchronised.
         self.summary = None
 
 
@@ -110,6 +109,7 @@ class ExperimentBuilder():
             self.tg_token = None
             self.tg_chat_id = None
 
+        self.checkpoints_format = checkpoints_format
 
     def make_dirs_for_training(self):
         os.makedirs(self.configs_dir, exist_ok=True)
@@ -119,61 +119,56 @@ class ExperimentBuilder():
 
 
     def get_checkpoint_path(self, epoch):
-        return os.path.join(self.weights_dir, checkpoints_format.format(epoch))
+        return os.path.join(self.weights_dir, self.checkpoints_format.format(epoch))
 
 
     def get_epoch_stat(self, epoch):
-        epoch_indices = [i for i, e in enumerate(self.summary['epoch']) if e == epoch]
-        if len(epoch_indices) != 1:
-            raise ValueError("Too many or no epoch found in the summary. Found %d epoch stats." % len(epoch_indices))
+        epoch_stat = self.summary[self.summary['epoch'] == epoch]
+        if len(epoch_stat) != 1:
+            raise ValueError("Too many or no epoch found in the summary. Found %d epoch stats." % len(epoch_stat))
         
-        epoch_idx = epoch_indices[0]
+        return epoch_stat.to_dict('records')[0]
 
-        stat = {}
-        for fieldname in self.summary_fieldnames:
-            stat[fieldname] = self.summary[fieldname][epoch_idx]
+    def get_best_model_stat(self, field = 'val_acc', is_better_func=lambda a,b: a>b):
+        field_values = self.summary[field].dropna()
+        if len(field_values) == 0:
+            raise ValueError(f'No values in the field {field}')
 
-        return stat
+        best_idx = field_values.index[0]
+        best_value = field_values[best_idx]
+        if len(field_values) == 1:
+            return self.summary[best_idx].to_dict('records')[0]
 
-    def get_best_model_stat(self, field = 'val_acc'):
-        array_to_argmax = np.array([v if v != None else -100 for v in self.summary[field] ])
-        best_idx = array_to_argmax.argmax()
+        for idx in field_values.index[1:]:
+            if is_better_func(field_values[idx], best_value):
+                best_idx = idx
+                best_value = field_values[idx]
 
-        best_stat = {}
-        for fieldname in self.summary_fieldnames:
-            best_stat[fieldname] = self.summary[fieldname][best_idx]
-
-        return best_stat
+        return self.summary[best_idx].to_dict('records')[0]
 
 
     def get_last_model_stat(self, field = 'val_acc'):
         """Ignore None values and get the last stat
         """
-        none_filtered = [i for i, v in enumerate(self.summary[field]) if v != None]
-        last_idx = none_filtered[-1]
+        field_values = self.summary[field].dropna()
+        if len(field_values) == 0:
+            raise ValueError(f'No values in the field {field}')
 
-        last_stat = {}
-        for fieldname in self.summary_fieldnames:
-            last_stat[fieldname] = self.summary[fieldname][last_idx]
-
-        return last_stat
+        last_idx = field_values.index[-1]
+        return self.summary[last_idx].to_dict('records')[0]
 
 
     def get_avg_value(self, field = 'train_runtime_sec'):
-        values = np.array([v for v in self.summary[field] if v is not None])
-        if values.size == 0:
+        if self.summary[field].size == 0:
             return 0
 
-        average_value = values.mean()
-        return average_value
+        return self.summary[field].mean(skipna=True)
 
     def get_sum_value(self, field = 'train_runtime_sec'):
-        values = np.array([v for v in self.summary[field] if v is not None])
-        if values.size == 0:
+        if self.summary[field].size == 0:
             return 0
 
-        sum_value = values.sum()
-        return sum_value 
+        return self.summary[field].sum(skipna=True)
 
 
 
@@ -199,13 +194,16 @@ class ExperimentBuilder():
             csv_writer = csv.DictWriter(csv_file, fieldnames=self.summary_fieldnames)
             csv_writer.writeheader()
 
-        self.summary = {}
+        dataframe_columns = {}
         for fieldname in self.summary_fieldnames:
-            self.summary[fieldname] = []
+            dataframe_columns[fieldname] = pd.Series([], dtype=self.summary_fieldtypes[fieldname])
+
+        self.summary = pd.DataFrame(dataframe_columns)
 
 
     def load_summary(self):
-        self.summary, fieldnames = csv_to_dict(self.summary_file, type_convert = self.summary_fieldtypes)
+        self.summary = pd.read_csv(self.summary_file, dtype=self.summary_fieldtypes)
+        fieldnames = list(self.summary.columns)
         if fieldnames != self.summary_fieldnames:
             logger.debug(f"self.summary_filednames does not match to that of summary.csv file. Updating to the CSV fields {fieldnames}.")
             self.summary_fieldnames = fieldnames
@@ -214,12 +212,7 @@ class ExperimentBuilder():
     def add_summary_line(self, curr_stat):
         """Writes one line of training stat to self.summary_file and self.summary
         """
-
-        for fieldname in self.summary_fieldnames:
-            if fieldname in curr_stat.keys():
-                self.summary[fieldname].append(curr_stat[fieldname])
-            else:
-                self.summary[fieldname].append(None)
+        self.summary.append(curr_stat)
 
         with open(self.summary_file, 'a', newline='') as csv_file:
             csv_writer = csv.DictWriter(csv_file, fieldnames=self.summary_fieldnames)
