@@ -19,6 +19,16 @@ stats = could be the same as summary
 summaries = multiple experiments' summaries
 """
 
+def DataFrame_loc_dict(df, index):
+    """Similar to df.iloc[index], but that will spoil the data type.
+    This function will return as Python dict which will preserve the type.
+    """
+    row_dict = {}
+    for column in df.columns:
+        row_dict[column] = df.at[index, column]
+    return row_dict
+
+
 class ExperimentBuilder():
     @staticmethod
     def return_fields_from_metrics(metrics):
@@ -156,6 +166,7 @@ class ExperimentBuilder():
         
         return epoch_stat.to_dict('records')[0]
 
+
     def get_best_model_stat(self, field = 'val_acc', is_better_func=lambda a,b: a>b):
         field_values = self.summary[field].dropna()
         if len(field_values) == 0:
@@ -164,14 +175,15 @@ class ExperimentBuilder():
         best_idx = field_values.index[0]
         best_value = field_values[best_idx]
         if len(field_values) == 1:
-            return self.summary[best_idx].to_dict('records')[0]
+            # Using iloc will spoil the data type!
+            return DataFrame_loc_dict(self.summary, best_idx)
 
         for idx in field_values.index[1:]:
             if is_better_func(field_values[idx], best_value):
                 best_idx = idx
                 best_value = field_values[idx]
 
-        return self.summary[best_idx].to_dict('records')[0]
+        return DataFrame_loc_dict(self.summary, best_idx)
 
 
     def get_last_model_stat(self, field = 'val_acc'):
@@ -182,7 +194,7 @@ class ExperimentBuilder():
             raise ValueError(f'No values in the field {field}')
 
         last_idx = field_values.index[-1]
-        return self.summary[last_idx].to_dict('records')[0]
+        return DataFrame_loc_dict(self.summary, last_idx)
 
 
     def get_avg_value(self, field = 'train_runtime_sec'):
@@ -232,8 +244,7 @@ class ExperimentBuilder():
         self.summary = pd.read_csv(self.summary_file, dtype=self.summary_fieldtypes)
         fieldnames = list(self.summary.columns)
         if fieldnames != self.summary_fieldnames:
-            logger.debug(f"self.summary_filednames does not match to that of summary.csv file. Updating to the CSV fields {fieldnames}.")
-            self.summary_fieldnames = fieldnames
+            logger.warning(f"self.summary_filednames does not match to that of summary.csv file. Ignoring the CSV fields {fieldnames}.")
 
 
     def add_summary_line(self, curr_stat):
