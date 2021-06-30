@@ -1,6 +1,5 @@
 import os
 import csv, json
-from .plot_stats import plot_stats_singlelabel, plot_stats_multilabel
 from .  import telegram_post as tg
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,7 +30,7 @@ def DataFrame_loc_dict(df, index):
 
 class ExperimentBuilder():
     @staticmethod
-    def return_fields_from_metrics(metrics):
+    def return_fields_from_metrics(metrics: dict):
         summary_fieldnames = ['epoch']
         summary_fieldtypes = {'epoch': int}
 
@@ -43,7 +42,7 @@ class ExperimentBuilder():
             if split in metrics.keys() and metrics[split] is not None and len(metrics[split]) > 0:
                 for metric in metrics[split]:
                     fieldtypes = metric.types_of_metrics()
-                    fieldnames = metric.get_csv_fieldnames(split)
+                    fieldnames = metric.get_csv_fieldnames()
 
                     if isinstance(fieldnames, tuple) and isinstance(fieldtypes, tuple):
                         for fieldname, fieldtype in zip(fieldnames, fieldtypes):
