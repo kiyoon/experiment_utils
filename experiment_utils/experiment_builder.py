@@ -257,85 +257,21 @@ class ExperimentBuilder():
             csv_writer.writerow(curr_stat)
 
 
-    def time_summary_to_text(self, perform_multicropval):
+    def time_summary_to_text(self):
         train_time_avg = human_time_duration(self.get_avg_value('train_runtime_sec'))
         val_time_avg = human_time_duration(self.get_avg_value('val_runtime_sec'))
         train_time_sum = self.get_sum_value('train_runtime_sec')
         val_time_sum = self.get_sum_value('val_runtime_sec')
-        if not perform_multicropval:
+        if 'multicropval_runtime_sec' not in self.summary.columns:
             text = f"Train/val time per epoch: {train_time_avg}, {val_time_avg}"
             text += f"\nTotal time elapsed: {human_time_duration(train_time_sum+val_time_sum)}"
         else:
-            multicropval_time_avg = human_time_duration(self.get_avg_value('multi_crop_val_runtime_sec'))
-            multicropval_time_sum = self.get_sum_value('multi_crop_val_runtime_sec')
+            multicropval_time_avg = human_time_duration(self.get_avg_value('multicropval_runtime_sec'))
+            multicropval_time_sum = self.get_sum_value('multicropval_runtime_sec')
             text = f"Train/val/multicropval time per epoch: {train_time_avg}, {val_time_avg}, {multicropval_time_avg}"
             text += f"\nTotal time elapsed: {human_time_duration(train_time_sum+val_time_sum+multicropval_time_sum)}"
 
         return text 
-
-    def plot_summary(self, send_telegram = False):
-        """Save summary plots to the plot dir and also send to Telegram
-        """
-
-        if 'train_acc' in self.summary_fieldnames:
-            task = 'singlelabel_classification'
-        elif 'train_vid_mAP' in self.summary_fieldnames:
-            task = 'multilabel_classification'
-        else:
-            raise NotImplementedError("Unknown task, cannot plot stats")
-
-        perform_multicropval = 'multi_crop_val_runtime_sec' in self.summary_fieldnames
-
-
-        if task == 'singlelabel_classification':
-            loss_fig, acc_fig, acc5_fig = plot_stats_singlelabel(self.summary, self.plots_dir)
-
-            if send_telegram:
-                best_clip_val_acc = self.get_best_model_stat('val_acc')
-                text = "Plots at epoch {:d}\nHighest (at epoch {:d}) / Last clip val acc {:.4f} / {:.4f}".format(self.summary['epoch'][-1],
-                    best_clip_val_acc['epoch'], best_clip_val_acc['val_acc'], self.summary['val_acc'][-1])
-
-                if perform_multicropval:
-                    best_video_val_acc = self.get_best_model_stat('multi_crop_val_vid_acc_top1')
-                    last_video_val_acc = self.get_last_model_stat('multi_crop_val_vid_acc_top1')
-                    text += "\nHighest (at epoch {:d}) / Last (at epoch {:d}) video val acc {:.4f} / {:.4f}".format(
-                            best_video_val_acc['epoch'], last_video_val_acc['epoch'], best_video_val_acc['multi_crop_val_vid_acc_top1'], last_video_val_acc['multi_crop_val_vid_acc_top1'])
-
-                text += "\n" + self.time_summary_to_text(perform_multicropval)
-
-
-                self.tg_send_text_with_expname(text)
-                self.tg_send_matplotlib_fig(loss_fig)
-                self.tg_send_matplotlib_fig(acc_fig)
-                if acc5_fig:
-                    self.tg_send_matplotlib_fig(acc5_fig)
-
-            plt.close(loss_fig)
-            plt.close(acc_fig)
-            if acc5_fig:
-                plt.close(acc5_fig)
-
-        elif task == 'multilabel_classification':
-            loss_fig, mAP_fig = plot_stats_multilabel(self.summary, self.plots_dir)
-            if send_telegram:
-                best_stat = self.get_best_model_stat('val_vid_mAP')
-                text = "Plots at epoch {:d}\nHighest (at epoch {:d}) / Last video val mAP {:.4f} / {:.4f}".format(self.summary['epoch'][-1],
-                    best_stat['epoch'], best_stat['val_vid_mAP'], self.summary['val_vid_mAP'][-1])
-
-                if perform_multicropval:
-                    best_multicrop_stat = self.get_best_model_stat('multi_crop_val_vid_mAP')
-                    last_multicrop_stat = self.get_last_model_stat('multi_crop_val_vid_mAP')
-                    text += "\nHighest (at epoch {:d}) / Last (at epoch {:d}) multicrop video val mAP {:.4f} / {:.4f}".format(
-                            best_multicrop_stat['epoch'], last_multicrop_stat['epoch'], best_multicrop_stat['multi_crop_val_vid_mAP'], last_multicrop_stat['multi_crop_val_vid_mAP'])
-
-                text += "\n" + self.time_summary_to_text(perform_multicropval)
-
-                self.tg_send_text_with_expname(text)
-                self.tg_send_matplotlib_fig(loss_fig)
-                self.tg_send_matplotlib_fig(mAP_fig)
-
-            plt.close(loss_fig)
-            plt.close(mAP_fig)
 
 
     # Send telegram messages when telegram key is initialised.
