@@ -81,7 +81,7 @@ class ExperimentBuilder():
 
         return summary_fieldnames, summary_fieldtypes
 
-    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames = None, summary_fieldtypes = None, telegram_key_ini = None, telegram_bot_idx = 0, checkpoints_format = "epoch_{:04d}.pth"):
+    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames, summary_fieldtypes, telegram_key_ini = None, telegram_bot_idx = 0, checkpoints_format = "epoch_{:04d}.pth"):
         """Initialise the experiment common paths.
 
         Params:
@@ -115,15 +115,8 @@ class ExperimentBuilder():
         self.summary = None
 
 
-        if summary_fieldnames:
-            self.summary_fieldnames = summary_fieldnames
-        else:
-            self.summary_fieldnames = ['epoch', 'train_runtime_sec', 'train_loss', 'train_acc', 'val_runtime_sec', 'val_loss', 'val_acc', 'multi_crop_val_runtime_sec', 'multi_crop_val_loss', 'multi_crop_val_acc', 'multi_crop_val_vid_acc_top1', 'multi_crop_val_vid_acc_top5']
-
-        if summary_fieldtypes:
-            self.summary_fieldtypes = summary_fieldtypes
-        else:
-            self.summary_fieldtypes = {'epoch': int, 'train_runtime_sec': float, 'train_loss': float, 'train_acc': float, 'val_runtime_sec': float, 'val_loss': float, 'val_acc': float, 'multi_crop_val_runtime_sec': float, 'multi_crop_val_loss': float, 'multi_crop_val_acc': float, 'multi_crop_val_vid_acc_top1': float, 'multi_crop_val_vid_acc_top5': float}
+        self.summary_fieldnames = summary_fieldnames
+        self.summary_fieldtypes = summary_fieldtypes
 
 
         if telegram_key_ini:
@@ -197,13 +190,13 @@ class ExperimentBuilder():
 
 
     def get_avg_value(self, field = 'train_runtime_sec'):
-        if self.summary[field].size == 0:
+        if self.summary[field].count() == 0:
             return 0
 
         return self.summary[field].mean(skipna=True)
 
     def get_sum_value(self, field = 'train_runtime_sec'):
-        if self.summary[field].size == 0:
+        if self.summary[field].count() == 0:
             return 0
 
         return self.summary[field].sum(skipna=True)
@@ -249,7 +242,7 @@ class ExperimentBuilder():
     def add_summary_line(self, curr_stat):
         """Writes one line of training stat to self.summary_file and self.summary
         """
-        self.summary.append(curr_stat)
+        self.summary = self.summary.append([curr_stat], ignore_index=True)  # appending list of dict is going to cast dict to DataFrame, which will ensure the dtypes are preserved. Otherwise, epoch will change to float type.
 
         with open(self.summary_file, 'a', newline='') as csv_file:
             csv_writer = csv.DictWriter(csv_file, fieldnames=self.summary_fieldnames)
@@ -261,7 +254,7 @@ class ExperimentBuilder():
         val_time_avg = human_time_duration(self.get_avg_value('val_runtime_sec'))
         train_time_sum = self.get_sum_value('train_runtime_sec')
         val_time_sum = self.get_sum_value('val_runtime_sec')
-        if 'multicropval_runtime_sec' not in self.summary.columns:
+        if 'multicropval_runtime_sec' not in self.summary.columns or self.summary['multicropval_runtime_sec'].count() == 0:
             text = f"Train/val time per epoch: {train_time_avg}, {val_time_avg}"
             text += f"\nTotal time elapsed: {human_time_duration(train_time_sum+val_time_sum)}"
         else:
