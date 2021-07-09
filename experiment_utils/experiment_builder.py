@@ -269,7 +269,6 @@ class ExperimentBuilder():
             if fieldname == 'epoch':
                 continue
 
-            logger.info(fieldname)
             self.summary.loc[row_logicidx, fieldname] = value
 
 
