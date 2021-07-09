@@ -239,7 +239,7 @@ class ExperimentBuilder():
             logger.warning(f"self.summary_filednames does not match to that of summary.csv file. Ignoring the CSV fields {fieldnames}.")
 
 
-    def add_summary_line(self, curr_stat):
+    def add_summary_line(self, curr_stat: dict):
         """Writes one line of training stat to self.summary_file and self.summary
         """
         self.summary = self.summary.append([curr_stat], ignore_index=True)  # appending list of dict is going to cast dict to DataFrame, which will ensure the dtypes are preserved. Otherwise, epoch will change to float type.
@@ -247,6 +247,34 @@ class ExperimentBuilder():
         with open(self.summary_file, 'a', newline='') as csv_file:
             csv_writer = csv.DictWriter(csv_file, fieldnames=self.summary_fieldnames)
             csv_writer.writerow(curr_stat)
+
+
+    def update_summary_line(self, curr_stat: dict):
+        """Update one line of training stat to self.summary_file and self.summary.
+        It will find the row of curr_stat['epoch'], and update the other columns.
+        """
+
+        # update self.summary
+        row_logicidx = self.summary.epoch == curr_stat['epoch']
+        num_rows_found = row_logicidx.sum()
+        if num_rows_found == 0:
+            raise ValueError(f'No row found for the epoch {curr_stat["epoch"]}.')
+        elif num_rows_found > 1:
+            raise ValueError(f'More than 1 rows were found for the epoch {curr_stat["epoch"]}.')
+
+        for fieldname, value in curr_stat.items():
+            if fieldname not in self.summary_fieldnames:
+                raise ValueError(f'You are trying to update summary field {fieldname} but it is not found for this experiment.')
+
+            if fieldname == 'epoch':
+                continue
+
+            logger.info(fieldname)
+            self.summary.loc[row_logicidx, fieldname] = value
+
+
+        # Update self.summary_file
+        self.summary.to_csv(self.summary_file, index=False)
 
 
     def time_summary_to_text(self):
