@@ -114,11 +114,11 @@ class ExperimentBuilder():
                 logger.info(f'{experiment_dir} is using old structure without version. Moving the files to {version_dir}.')
 
                 os.makedirs(self.experiment_dir)
-                os.rename(os.path.join(experiment_dir, 'configs'), self.experiment_dir)
-                os.rename(os.path.join(experiment_dir, 'logs'), self.experiment_dir)
-                os.rename(os.path.join(experiment_dir, 'plots'), self.experiment_dir)
-                os.rename(os.path.join(experiment_dir, 'weights'), self.experiment_dir)
-                os.rename(os.path.join(experiment_dir, 'tensorboard_runs'), self.experiment_dir)
+                shutil.move(os.path.join(experiment_dir, 'configs'), self.experiment_dir)
+                shutil.move(os.path.join(experiment_dir, 'logs'), self.experiment_dir)
+                shutil.move(os.path.join(experiment_dir, 'plots'), self.experiment_dir)
+                shutil.move(os.path.join(experiment_dir, 'weights'), self.experiment_dir)
+                shutil.move(os.path.join(experiment_dir, 'tensorboard_runs'), self.experiment_dir)
                 if os.path.isdir(os.path.join(experiment_dir, 'predictions')):
                     shutil.move(os.path.join(experiment_dir, 'predictions'), self.experiment_dir)
             else:
