@@ -125,7 +125,7 @@ class ExperimentBuilder():
                 # list existing versions and automatically assign version
                 experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name)
                 if not os.path.isdir(experiment_dir):
-                    self.version = 0
+                    highest_version = -1 #self.version = 0
                 else:
                     highest_version = -1
                     dirnames = next(os.walk(experiment_dir))[1]
