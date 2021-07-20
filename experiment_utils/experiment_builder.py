@@ -132,9 +132,9 @@ class ExperimentBuilder():
                     for dirname in dirnames:
                         regex_search = re.search(version_regex, dirname)
                         if regex_search is not None:
-                            version = int(regex_search.group(version_regex_group))
-                            if version > highest_version:
-                                highest_version = version
+                            searched_version = int(regex_search.group(version_regex_group))
+                            if searched_version > highest_version:
+                                highest_version = searched_version
 
                 if version == -1:
                     self.version = highest_version + 1
