@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 import pandas as pd
 import re
+import shutil
 
 """Vocabularies I used
 stat = 1 line of the summary
@@ -82,7 +83,7 @@ class ExperimentBuilder():
 
         return summary_fieldnames, summary_fieldtypes
 
-    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames, summary_fieldtypes, version = -1, telegram_key_ini = None, telegram_bot_idx = 0,
+    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames, summary_fieldtypes, version = -2, telegram_key_ini = None, telegram_bot_idx = 0,
             checkpoints_format = "epoch_{:04d}.pth",
             version_format = "version_{:03d}", version_regex = "version_(\d+)", version_regex_group = 1):
         """Initialise the experiment common paths.
@@ -92,6 +93,7 @@ class ExperimentBuilder():
             dataset (str): Name of the dataset
             model_name (str): Name of the model 
             experiment_name (str): Name of the experiment
+            version (int): -2 last version for accessing existing experiment, -1 new version for new training, 0, 1, 2, ...
         """
         self.experiment_root = experiment_root
         self.dataset = dataset
@@ -118,7 +120,7 @@ class ExperimentBuilder():
                 os.rename(os.path.join(experiment_dir, 'weights'), self.experiment_dir)
                 os.rename(os.path.join(experiment_dir, 'tensorboard_runs'), self.experiment_dir)
                 if os.path.isdir(os.path.join(experiment_dir, 'predictions')):
-                    os.rename(os.path.join(experiment_dir, 'predictions'), self.experiment_dir)
+                    shutil.move(os.path.join(experiment_dir, 'predictions'), self.experiment_dir)
             else:
                 # list existing versions and automatically assign version
                 experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name)
