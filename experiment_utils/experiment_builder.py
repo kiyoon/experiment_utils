@@ -10,6 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import pandas as pd
+import re
 
 """Vocabularies I used
 stat = 1 line of the summary
@@ -81,7 +82,9 @@ class ExperimentBuilder():
 
         return summary_fieldnames, summary_fieldtypes
 
-    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames, summary_fieldtypes, telegram_key_ini = None, telegram_bot_idx = 0, checkpoints_format = "epoch_{:04d}.pth"):
+    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames, summary_fieldtypes, version = -1, telegram_key_ini = None, telegram_bot_idx = 0,
+            checkpoints_format = "epoch_{:04d}.pth",
+            version_format = "version_{:03d}", version_regex = "version_(\d+)", version_regex_group = 1):
         """Initialise the experiment common paths.
 
         Params:
@@ -95,9 +98,53 @@ class ExperimentBuilder():
         self.model_name = model_name
         self.experiment_name = experiment_name
 
-        # dirs
-        self.experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name)
+        # version
+        if version >= 0:
+            self.experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name, version_format.format(version))
+            self.version = version
+        else:
+            # check if using old structure without version
+            if os.path.isdir(os.path.join(experiment_root, dataset, model_name, experiment_name, 'logs')):
+                experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name)
+                self.version = 0
+                version_dir = version_format.format(self.version)
+                self.experiment_dir = os.path.join(experiment_dir, version_dir)
+                logger.info(f'{experiment_dir} is using old structure without version. Moving the files to {version_dir}.')
 
+                os.makedirs(self.experiment_dir)
+                os.rename(os.path.join(experiment_dir, 'configs'), self.experiment_dir)
+                os.rename(os.path.join(experiment_dir, 'logs'), self.experiment_dir)
+                os.rename(os.path.join(experiment_dir, 'plots'), self.experiment_dir)
+                os.rename(os.path.join(experiment_dir, 'weights'), self.experiment_dir)
+                os.rename(os.path.join(experiment_dir, 'tensorboard_runs'), self.experiment_dir)
+                if os.path.isdir(os.path.join(experiment_dir, 'predictions')):
+                    os.rename(os.path.join(experiment_dir, 'predictions'), self.experiment_dir)
+            else:
+                # list existing versions and automatically assign version
+                experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name)
+                if not os.path.isdir(experiment_dir):
+                    self.version = 0
+                else:
+                    highest_version = -1
+                    dirnames = next(os.walk(experiment_dir))[1]
+                    for dirname in dirnames:
+                        regex_search = re.search(version_regex, dirname)
+                        if regex_search is not None:
+                            version = int(regex_search.group(version_regex_group))
+                            if version > highest_version:
+                                highest_version = version
+
+                if version == -1:
+                    self.version = highest_version + 1
+                elif version == -2:
+                    self.version = highest_version
+                    assert self.version >= 0, 'No experiment version can be found. Does the experiment exist?'
+                else:
+                    raise ValueError(f'version has to be one of -2 (last version), -1 (new version), or 0, 1, 2, ...., but got {version}')
+
+                self.experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name, version_format.format(self.version))
+
+        # dirs
         self.configs_dir = os.path.join(self.experiment_dir, 'configs')
         self.logs_dir = os.path.join(self.experiment_dir, 'logs')
         self.plots_dir = os.path.join(self.experiment_dir, 'plots')
