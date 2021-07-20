@@ -352,7 +352,7 @@ class ExperimentBuilder():
         return None
 
     def tg_send_text_with_expname(self, body):
-        return self.tg_send_text_with_title('{} {} {}'.format(self.dataset, self.model_name, self.experiment_name), body)
+        return self.tg_send_text_with_title(f'{self.dataset} {self.model_name} {self.experiment_name} v{self.version}', body)
 
     def tg_send_photo(self, img_path):
         if self.tg_token:
