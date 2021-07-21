@@ -107,20 +107,8 @@ class ExperimentBuilder():
         else:
             # check if using old structure without version
             if os.path.isdir(os.path.join(experiment_root, dataset, model_name, experiment_name, 'logs')):
-                experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name)
-                self.version = 0
-                version_dir = version_format.format(self.version)
-                self.experiment_dir = os.path.join(experiment_dir, version_dir)
-                logger.info(f'{experiment_dir} is using old structure without version. Moving the files to {version_dir}.')
-
-                os.makedirs(self.experiment_dir)
-                shutil.move(os.path.join(experiment_dir, 'configs'), self.experiment_dir)
-                shutil.move(os.path.join(experiment_dir, 'logs'), self.experiment_dir)
-                shutil.move(os.path.join(experiment_dir, 'plots'), self.experiment_dir)
-                shutil.move(os.path.join(experiment_dir, 'weights'), self.experiment_dir)
-                shutil.move(os.path.join(experiment_dir, 'tensorboard_runs'), self.experiment_dir)
-                if os.path.isdir(os.path.join(experiment_dir, 'predictions')):
-                    shutil.move(os.path.join(experiment_dir, 'predictions'), self.experiment_dir)
+                # Treat it as version 0
+                highest_version = 0
             else:
                 # list existing versions and automatically assign version
                 experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name)
@@ -136,15 +124,15 @@ class ExperimentBuilder():
                             if searched_version > highest_version:
                                 highest_version = searched_version
 
-                if version == -1:
-                    self.version = highest_version + 1
-                elif version == -2:
-                    self.version = highest_version
-                    assert self.version >= 0, 'No experiment version can be found. Does the experiment exist?'
-                else:
-                    raise ValueError(f'version has to be one of -2 (last version), -1 (new version), or 0, 1, 2, ...., but got {version}')
+            if version == -1:
+                self.version = highest_version + 1
+            elif version == -2:
+                self.version = highest_version
+                assert self.version >= 0, 'No experiment version can be found. Does the experiment exist?'
+            else:
+                raise ValueError(f'version has to be one of -2 (last version), -1 (new version), or 0, 1, 2, ...., but got {version}')
 
-                self.experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name, version_format.format(self.version))
+            self.experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name, version_format.format(self.version))
 
         # dirs
         self.configs_dir = os.path.join(self.experiment_dir, 'configs')
@@ -190,6 +178,22 @@ class ExperimentBuilder():
         self.checkpoints_format = checkpoints_format
 
     def make_dirs_for_training(self):
+        old_experiment_dir = os.path.join(self.experiment_dir, '..')
+        if os.path.isdir(os.path.join(old_experiment_dir, 'logs')):
+            # Old structure without version exists. Move this to version 0
+            version_dir = version_format.format(0)
+            logger.info(f'{old_experiment_dir} is using old structure without version. Moving the files to {version_dir}.')
+            old_exp_dir_version = os.path.join(old_experiment_dir, version_dir)
+            os.makedirs(old_exp_dir_version)    # exist not okay
+            shutil.move(os.path.join(old_experiment_dir, 'configs'), old_exp_dir_version)
+            shutil.move(os.path.join(old_experiment_dir, 'logs'), old_exp_dir_version)
+            shutil.move(os.path.join(old_experiment_dir, 'plots'), old_exp_dir_version)
+            shutil.move(os.path.join(old_experiment_dir, 'weights'), old_exp_dir_version)
+            shutil.move(os.path.join(old_experiment_dir, 'tensorboard_runs'), old_exp_dir_version)
+            if os.path.isdir(os.path.join(old_experiment_dir, 'predictions')):
+                shutil.move(os.path.join(old_experiment_dir, 'predictions'), old_exp_dir_version)
+
+        # Make dirs for current experiment
         os.makedirs(self.configs_dir, exist_ok=True)
         os.makedirs(self.logs_dir, exist_ok=True)
         os.makedirs(self.plots_dir, exist_ok=True)
