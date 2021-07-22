@@ -176,12 +176,13 @@ class ExperimentBuilder():
             self.tg_chat_id = None
 
         self.checkpoints_format = checkpoints_format
+        self.version_format = version_format
 
     def make_dirs_for_training(self):
-        old_experiment_dir = os.path.join(self.experiment_dir, '..')
+        old_experiment_dir = os.path.abspath(os.path.join(self.experiment_dir, os.pardir))
         if os.path.isdir(os.path.join(old_experiment_dir, 'logs')):
             # Old structure without version exists. Move this to version 0
-            version_dir = version_format.format(0)
+            version_dir = self.version_format.format(0)
             logger.info(f'{old_experiment_dir} is using old structure without version. Moving the files to {version_dir}.')
             old_exp_dir_version = os.path.join(old_experiment_dir, version_dir)
             os.makedirs(old_exp_dir_version)    # exist not okay
