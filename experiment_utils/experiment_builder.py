@@ -178,7 +178,7 @@ class ExperimentBuilder():
         self.checkpoints_format = checkpoints_format
         self.version_format = version_format
 
-    def make_dirs_for_training(self):
+    def _check_old_structure_and_move(self):
         old_experiment_dir = os.path.abspath(os.path.join(self.experiment_dir, os.pardir))
         if os.path.isdir(os.path.join(old_experiment_dir, 'logs')):
             # Old structure without version exists. Move this to version 0
@@ -193,6 +193,9 @@ class ExperimentBuilder():
             shutil.move(os.path.join(old_experiment_dir, 'tensorboard_runs'), old_exp_dir_version)
             if os.path.isdir(os.path.join(old_experiment_dir, 'predictions')):
                 shutil.move(os.path.join(old_experiment_dir, 'predictions'), old_exp_dir_version)
+
+    def make_dirs_for_training(self):
+        self._check_old_structure_and_move()
 
         # Make dirs for current experiment
         os.makedirs(self.configs_dir, exist_ok=True)
@@ -316,6 +319,8 @@ class ExperimentBuilder():
 
 
     def load_summary(self):
+        self._check_old_structure_and_move()
+
         self.summary = pd.read_csv(self.summary_file, dtype=self.summary_fieldtypes)
         fieldnames = list(self.summary.columns)
         if fieldnames != self.summary_fieldnames:
