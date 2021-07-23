@@ -200,6 +200,35 @@ class ExperimentBuilder():
         os.makedirs(self.plots_dir, exist_ok=True)
         os.makedirs(self.weights_dir, exist_ok=True)
 
+    def copy_from(self, exp, copy_dirs=True, exclude_weights=True):
+        """
+        Instead of making dirs, initialise from another ExperimentBuilder.
+        It doesn't copy the full state dict, so the directories and version etc. don't change and should stay different from the other exp.
+        Instead, it copies the self.summary and copy the entire experiment folder.
+
+        Raise exception when the directory already exists and you're trying to initialise (copy).
+        """
+        self.summary = exp.summary
+        if copy_dirs:
+            if exclude_weights:
+                ignore_func = lambda directory, contents: contents if directory == exp.weights_dir else []
+            else:
+                ignore_func = None
+
+            shutil.copytree(exp.experiment_dir, self.experiment_dir, symlinks=True, dirs_exist_ok=False,
+                    ignore=ignore_func)
+
+    def clip_summary_from_epoch(self, clip_from_epoch: int):
+        """
+        When you're loading from intermediate checkpoint (not last) and continuing experiment,
+        you should remove later stats using this function, so none of the epoch stats get overlapped.
+        """
+        mask = self.summary.epoch < clip_from_epoch
+        self.summary = self.summary[mask]
+
+        # Update self.summary_file
+        self.summary.to_csv(self.summary_file, index=False)
+
 
     def get_checkpoint_path(self, epoch):
         return os.path.join(self.weights_dir, self.checkpoints_format.format(epoch))
