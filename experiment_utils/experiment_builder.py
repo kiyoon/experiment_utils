@@ -319,8 +319,6 @@ class ExperimentBuilder():
 
 
     def load_summary(self):
-        self._check_old_structure_and_move()
-
         self.summary = pd.read_csv(self.summary_file, dtype=self.summary_fieldtypes)
         fieldnames = list(self.summary.columns)
         if fieldnames != self.summary_fieldnames:
