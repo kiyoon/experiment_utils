@@ -13,6 +13,8 @@ import pandas as pd
 import re
 import shutil
 
+import socket
+
 """Vocabularies I used
 stat = 1 line of the summary
 summary = 1 training experiment's stats
@@ -391,7 +393,7 @@ class ExperimentBuilder():
         return None
 
     def tg_send_text_with_expname(self, body):
-        return self.tg_send_text_with_title(f'{self.dataset} {self.model_name} {self.experiment_name} v{self.version}', body)
+        return self.tg_send_text_with_title(f'{self.dataset} {self.model_name} {self.experiment_name} v{self.version} on {socket.gethostname()}', body)
 
     def tg_send_photo(self, img_path):
         if self.tg_token:
