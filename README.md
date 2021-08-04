@@ -8,21 +8,21 @@ The experiment directory will look something like this:
 ${experiment_root}
 └── ${dataset}
     └── ${model_name}
-		└── ${experiment_name}
-			└── version_000
-				├── configs
-				│   └── args.json
-				├── logs
-				│   └── summary.csv
-				├── plots
-				│   ├── accuracy.pdf
-				│   ├── loss.pdf
-				│   ├── video_accuracy_top1.pdf
-				│   └── video_accuracy_top5.pdf
-				├── (predictions)
-				├── tensorboard_runs
-				└── weights
-					├── epoch_0000.pth
-					└── epoch_0001.pth
+        └── ${experiment_name}
+            └── version_000
+                ├── configs
+                │   └── args.json
+                ├── logs
+                │   └── summary.csv
+                ├── plots
+                │   ├── accuracy.pdf
+                │   ├── loss.pdf
+                │   ├── video_accuracy_top1.pdf
+                │   └── video_accuracy_top5.pdf
+                ├── (predictions)
+                ├── tensorboard_runs
+                └── weights
+                    ├── epoch_0000.pth
+                    └── epoch_0001.pth
 ```
 
