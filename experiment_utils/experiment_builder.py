@@ -38,12 +38,13 @@ class ExperimentBuilder():
         summary_fieldnames = ['epoch']
         summary_fieldtypes = {'epoch': int}
 
-        for split in ['train', 'val', 'multicropval']:
+#        for split in ['train', 'val', 'multicropval']:
+        for split in metrics.keys():
             # Every split has runtime and loss metric by default.
             summary_fieldnames.extend([f'{split}_runtime_sec', f'{split}_loss'])
             summary_fieldtypes.update({f'{split}_runtime_sec': float, f'{split}_loss': float})
 
-            if split in metrics.keys() and metrics[split] is not None and len(metrics[split]) > 0:
+            if metrics[split] is not None and len(metrics[split]) > 0:
                 for metric in metrics[split]:
                     fieldtypes = metric.types_of_metrics()
                     fieldnames = metric.get_csv_fieldnames()
