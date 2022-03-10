@@ -331,7 +331,7 @@ class ExperimentBuilder():
     def add_summary_line(self, curr_stat: dict):
         """Writes one line of training stat to self.summary_file and self.summary
         """
-        self.summary = self.summary.append([curr_stat], ignore_index=True)  # appending list of dict is going to cast dict to DataFrame, which will ensure the dtypes are preserved. Otherwise, epoch will change to float type.
+        self.summary = pd.concat([self.summary, pd.DataFrame(curr_stat, index=[0])], ignore_index=True)
 
         with open(self.summary_file, 'a', newline='') as csv_file:
             csv_writer = csv.DictWriter(csv_file, fieldnames=self.summary_fieldnames)
