@@ -138,10 +138,10 @@ if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
 
-    if hasattr('telegram_token'):
+    if 'telegram_token' in globals().keys():
         for chat_id in telegram_chat_ids:
             print(send_text_with_title(telegram_token, chat_id, args.title, args.body))
-    elif hasattr('config_ini_path'):
+    elif 'config_ini_path' in globals().keys():
         config = configparser.ConfigParser()
         config.read(config_ini_path)
         chat_ids = config['Telegram']['chat_ids'].split(',')
