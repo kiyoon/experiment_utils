@@ -3,8 +3,25 @@
 
 # For command line usage, include the token and chat ids in advance in the script.
 # If you want to use only the functions, there's no need to include this.
+"""
 telegram_token = ""
 telegram_chat_ids = [""]
+"""
+
+# For command line usage, include the token and chat ids in the INI file.
+# If you want to use only the functions, there's no need to include this.
+# The file format has to be
+#
+# [Telegram]
+# token = ABCDEF
+# chat_ids = 1234567,2345678
+# 
+"""
+import os
+import configparser
+_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+config_ini_path = os.path.join(_SCRIPT_DIR, 'telegram_key.ini')
+"""
 
 try:
     from PIL import Image
@@ -121,5 +138,14 @@ if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
 
-    for chat_id in telegram_chat_ids:
-        print(send_text_with_title(telegram_token, chat_id, args.title, args.body))
+    if hasattr('telegram_token'):
+        for chat_id in telegram_chat_ids:
+            print(send_text_with_title(telegram_token, chat_id, args.title, args.body))
+    elif hasattr('config_ini_path'):
+        config = configparser.ConfigParser()
+        config.read(config_ini_path)
+        chat_ids = config['Telegram']['chat_ids'].split(',')
+        for chat_id in chat_ids:
+            print(send_text_with_title(config['Telegram']['token'], chat_id, args.title, args.body))
+    else:
+        raise ValueError('None of the Telegram token is specified but trying to send a message. Edit this file.')
