@@ -1,19 +1,18 @@
 import os
 import csv, json
 from .  import telegram_post as tg
-import numpy as np
-import matplotlib.pyplot as plt
 import configparser
 from .human_time_duration import human_time_duration
-
-import logging
-logger = logging.getLogger(__name__)
 
 import pandas as pd
 import re
 import shutil
 
 import socket
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 """Vocabularies I used
 stat = 1 line of the summary
@@ -61,6 +60,7 @@ class ExperimentBuilder():
 
         return summary_fieldnames, summary_fieldtypes
 
+
     @staticmethod
     def return_fields_singlelabel(multicropval = True):
         summary_fieldnames = ['epoch', 'train_runtime_sec', 'train_loss', 'train_acc', 'val_runtime_sec', 'val_loss', 'val_acc']
@@ -86,7 +86,8 @@ class ExperimentBuilder():
 
         return summary_fieldnames, summary_fieldtypes
 
-    def __init__(self, experiment_root, dataset, model_name, experiment_name, summary_fieldnames, summary_fieldtypes, version = -2, telegram_key_ini = None, telegram_bot_idx = 0,
+
+    def __init__(self, experiment_root, dataset, model_name, experiment_name, subfolder_name, *, summary_fieldnames, summary_fieldtypes, version = 'last', telegram_key_ini = None, telegram_bot_idx = 0,
             checkpoints_format = "epoch_{:04d}.pth",
             version_format = "version_{:03d}", version_regex = "version_(\d+)", version_regex_group = 1):
         """Initialise the experiment common paths.
@@ -96,16 +97,35 @@ class ExperimentBuilder():
             dataset (str): Name of the dataset
             model_name (str): Name of the model 
             experiment_name (str): Name of the experiment
+            subfolder_name (str or None): Name of the subfolder. None to not create a subfolder.
             version (int): -2 last version for accessing existing experiment, -1 new version for new training, 0, 1, 2, ...
+                    (str): 'last' or 'new' instead of -2 and -1.
         """
         self.experiment_root = experiment_root
         self.dataset = dataset
         self.model_name = model_name
         self.experiment_name = experiment_name
 
+        if subfolder_name is None:
+            self.subfolder_name = ''
+        else:
+            self.subfolder_name = subfolder_name
+
         # version
+        if isinstance(version, str):
+            if version.lower() == 'last':
+                version = -2
+            elif version.lower() == 'new':
+                version = -1
+            else:
+                raise ValueError(f'Unknown version of the experiment: {version}')
+        else:
+            if version in [-2, -1]:
+                logger.warning('version -2 or -1 is deprecated. Use "last" or "new" instead.')
+
+
         if version >= 0:
-            self.experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name, version_format.format(version))
+            self.experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name, self.subfolder_name, version_format.format(version))
             self.version = version
         else:
             # check if using old structure without version
@@ -114,9 +134,9 @@ class ExperimentBuilder():
                 highest_version = 0
             else:
                 # list existing versions and automatically assign version
-                experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name)
+                experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name, self.subfolder_name)
                 if not os.path.isdir(experiment_dir):
-                    highest_version = -1 #self.version = 0
+                    highest_version = -1  # self.version = 0
                 else:
                     highest_version = -1
                     dirnames = next(os.walk(experiment_dir))[1]
@@ -133,9 +153,9 @@ class ExperimentBuilder():
                 self.version = highest_version
                 assert self.version >= 0, 'No experiment version can be found. Does the experiment exist?'
             else:
-                raise ValueError(f'version has to be one of -2 (last version), -1 (new version), or 0, 1, 2, ...., but got {version}')
+                raise ValueError(f'version has to be one of "last", "new", or 0, 1, 2, ...., but got {version}.')
 
-            self.experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name, version_format.format(self.version))
+            self.experiment_dir = os.path.join(experiment_root, dataset, model_name, experiment_name, self.subfolder_name, version_format.format(self.version))
 
         # dirs
         self.configs_dir = os.path.join(self.experiment_dir, 'configs')
@@ -169,17 +189,18 @@ class ExperimentBuilder():
                     raise KeyError('No telegram bot given')
                 else:
                     logger.info(f'Telegram bot initialised with keys in {telegram_key_ini} and using the bot number {telegram_bot_idx}')
-            except KeyError as e:
+            except KeyError:
                 logger.warning(f'Telegram token and chat_id not found in {telegram_key_ini}. Suppressing all the Telegram outputs.')
                 self.tg_token = None
                 self.tg_chat_id = None
         else:
-            logger.info(f'Telegram bot not initialised.')
+            logger.info('Telegram bot not initialised.')
             self.tg_token = None
             self.tg_chat_id = None
 
         self.checkpoints_format = checkpoints_format
         self.version_format = version_format
+
 
     def _check_old_structure_and_move(self):
         old_experiment_dir = os.path.abspath(os.path.join(self.experiment_dir, os.pardir))
@@ -197,6 +218,7 @@ class ExperimentBuilder():
             if os.path.isdir(os.path.join(old_experiment_dir, 'predictions')):
                 shutil.move(os.path.join(old_experiment_dir, 'predictions'), old_exp_dir_version)
 
+
     def make_dirs_for_training(self):
         self._check_old_structure_and_move()
 
@@ -205,6 +227,7 @@ class ExperimentBuilder():
         os.makedirs(self.logs_dir, exist_ok=True)
         os.makedirs(self.plots_dir, exist_ok=True)
         os.makedirs(self.weights_dir, exist_ok=True)
+
 
     def copy_from(self, exp, copy_dirs=True, exclude_weights=True):
         """
@@ -217,7 +240,8 @@ class ExperimentBuilder():
         self.summary = exp.summary
         if copy_dirs:
             if exclude_weights:
-                ignore_func = lambda directory, contents: contents if directory == exp.weights_dir else []
+                def ignore_func(directory, contents):
+                    return contents if directory == exp.weights_dir else []
             else:
                 ignore_func = None
 
@@ -283,6 +307,7 @@ class ExperimentBuilder():
             return 0
 
         return self.summary[field].mean(skipna=True)
+
 
     def get_sum_value(self, field = 'train_runtime_sec'):
         if self.summary[field].count() == 0:
@@ -381,6 +406,14 @@ class ExperimentBuilder():
 
         return text 
 
+    
+    @property
+    def full_exp_name(self):
+        if self.subfolder_name:
+            return f'{self.dataset} {self.model_name} {self.experiment_name} {self.subfolder_name} v{self.version}'
+        else:
+            return f'{self.dataset} {self.model_name} {self.experiment_name} v{self.version}'
+
 
     # Send telegram messages when telegram key is initialised.
     def tg_send_text(self, text, parse_mode = None):
@@ -388,25 +421,31 @@ class ExperimentBuilder():
             return tg.send_text(self.tg_token, self.tg_chat_id, text, parse_mode)
         return None
 
+
     def tg_send_text_with_title(self, title, body):
         if self.tg_token:
             return tg.send_text_with_title(self.tg_token, self.tg_chat_id, title, body)
         return None
 
+
     def tg_send_text_with_expname(self, body):
-        return self.tg_send_text_with_title(f'{self.dataset} {self.model_name} {self.experiment_name} v{self.version} on {socket.gethostname()}', body)
+        return self.tg_send_text_with_title(f'{self.full_exp_name} on {socket.gethostname()}', body)
+
 
     def tg_send_photo(self, img_path):
         if self.tg_token:
             return tg.send_photo(self.tg_token, self.tg_chat_id, img_path)
         return None
 
+
     def tg_send_remote_photo(self, img_url):
         if self.tg_token:
             return tg.send_remote_photo(self.tg_token, self.tg_chat_id, img_url)
         return None
 
+
     def tg_send_matplotlib_fig(self, fig):
         if self.tg_token:
             return tg.send_matplotlib_fig(self.tg_token, self.tg_chat_id, fig)
         return None
+
